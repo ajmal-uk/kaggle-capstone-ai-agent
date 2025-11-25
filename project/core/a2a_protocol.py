@@ -8,6 +8,7 @@ from typing import List, Optional, Dict, Any
 class PlannerOutput:
     emotion: str
     risk_level: str
+    distress_score: int
     action: str
     instruction: str
     technique_suggestion: str
