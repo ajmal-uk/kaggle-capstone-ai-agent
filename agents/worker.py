@@ -1,47 +1,129 @@
 """
-Worker Agent: Executes the plan and generates content.
+Worker Agent: Executes the plan and generates safe, supportive responses.
 """
-import os
-import google.generativeai as genai
-from project.core.context_engineering import WORKER_PROMPT
-from project.core.a2a_protocol import WorkerOutput
-from project.tools.tools import Tools
-from project.core.observability import logger
+from typing import Dict
+from core.context_engineering import WORKER_PROMPT
+from core.a2a_protocol import WorkerOutput
+from tools.tools import Tools
+from core.observability import logger
+from core.gemini_client import GeminiClient
 
 class Worker:
     def __init__(self):
-        self.mock_mode = os.environ.get("MOCK_MODE") == "True"
-        if not self.mock_mode:
-            genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-
-    def work(self, planner_output):
-        logger.log("Worker", f"Executing instruction: {planner_output.get('instruction')}")
-
+        self.client = GeminiClient(WORKER_PROMPT)
+        self.mock_mode = False
+        
+    def work(self, planner_output: Dict) -> Dict:
         instruction = planner_output.get("instruction", "")
         action = planner_output.get("action", "")
-
-        # Tool Usage
+        technique_suggestion = planner_output.get("technique_suggestion", "none")
+        
+        logger.log("Worker", "Executing plan", 
+                  data={"action": action, "technique": technique_suggestion})
+        
+        # Mock mode
+        if hasattr(self, 'mock_mode') and self.mock_mode:
+            return self._mock_work(planner_output)
+        
+        # Gather context data
         context_data = ""
         tools_used = []
-
-        if action == "provide_grounding":
-            # Simple keyword matching to pick tool
-            if "box" in instruction.lower():
-                context_data = Tools.get_grounding_technique("box_breathing")
-                tools_used.append("box_breathing")
-            else:
-                context_data = Tools.get_grounding_technique("54321_grounding")
-                tools_used.append("54321_grounding")
+        
+        if action == "provide_grounding" and technique_suggestion != "none":
+            technique = Tools.get_grounding_technique(technique_suggestion)
+            if technique:
+                context_data = Tools.format_technique_steps(technique)
+                tools_used.append(technique_suggestion)
+                
         elif action == "provide_resources":
-            context_data = str(Tools.get_helpline("Global"))
+            helpline = Tools.get_helpline("Global")
+            context_data = f"""
+            Available Resources:
+            - {helpline['name']}: {helpline['number']} ({helpline['hours']})
+            - Website: {helpline['website']}
+            
+            For specific countries, provide the country code.
+            """
             tools_used.append("helpline_search")
-
-        if self.mock_mode:
-             draft = f"[Mock Worker] Based on {action}: {instruction}. Data: {context_data}"
-             return WorkerOutput(draft, tools_used).to_dict()
-
-        # Real LLM Generation
-        prompt = f"{WORKER_PROMPT}\n\nINSTRUCTION: {instruction}\nCONTEXT DATA: {context_data}\n\nDRAFT RESPONSE:"
-        response = self.model.generate_content(prompt)
-        return WorkerOutput(response.text, tools_used).to_dict()
+            
+        elif action == "emergency_protocol":
+            context_data = """
+            EMERGENCY PROTOCOL: User may be in crisis.
+            Provide ONLY emergency resources and safety disclaimer.
+            Do NOT provide grounding techniques or advice.
+            """
+            tools_used.append("emergency_protocol")
+        
+        # Build prompt
+        prompt = f"""
+        USER NEED: {instruction}
+        
+        SUPPORT DATA:
+        {context_data}
+        
+        Generate a safe, supportive response following your guidelines.
+        """
+        
+        # Generate response
+        draft = self.client.generate_response(prompt)
+        
+        if not draft:
+            # Fallback response
+            draft = "I apologize, but I'm having trouble generating a response. Please try again, or contact a mental health professional if you need immediate support."
+        
+        return WorkerOutput(
+            draft_response=draft,
+            tools_used=tools_used,
+            technique_applied=technique_suggestion if action == "provide_grounding" else None
+        ).to_dict()
+    
+    def _mock_work(self, planner_output: Dict) -> Dict:
+        """Mock worker for testing."""
+        action = planner_output.get("action")
+        instruction = planner_output.get("instruction", "")
+        
+        if action == "emergency_protocol":
+            draft = """
+            ⚠️ **If you're in immediate danger, please contact emergency services now.**
+            
+            In the US: Call or text 988 (Suicide & Crisis Lifeline)
+            In the UK: Call 111 (NHS)
+            Global: Visit befrienders.org
+            
+            You matter. Please reach out for professional support.
+            """
+        elif action == "provide_grounding":
+            draft = f"""
+            I hear that you're feeling overwhelmed. Let's try a grounding technique together.
+            
+            **Box Breathing:**
+            1. Breathe in for 4 counts
+            2. Hold for 4 counts  
+            3. Breathe out for 4 counts
+            4. Hold for 4 counts
+            
+            Repeat this 4-5 times. I'm here with you.
+            *This is not a substitute for professional care.*
+            """
+        elif action == "provide_resources":
+            draft = """
+            Here are some trusted mental health resources:
+            
+            **988 Suicide & Crisis Lifeline**
+            Call or text: 988
+            Available 24/7
+            Website: 988lifeline.org
+            
+            **Befrienders Worldwide**
+            Visit: befrienders.org for global resources
+            
+            Remember, seeking help is a sign of strength.
+            """
+        else:
+            draft = "Thank you for sharing. I'm here to listen and support you. What you're feeling is valid."
+        
+        return WorkerOutput(
+            draft_response=draft,
+            tools_used=["mock_mode"],
+            technique_applied="mock"
+        ).to_dict()

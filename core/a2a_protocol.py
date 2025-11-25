@@ -1,8 +1,8 @@
 """
-Defines the data structures for Agent-to-Agent communication.
+Agent-to-Agent communication data structures.
 """
 from dataclasses import dataclass, asdict
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 @dataclass
 class PlannerOutput:
@@ -10,16 +10,19 @@ class PlannerOutput:
     risk_level: str
     action: str
     instruction: str
+    technique_suggestion: str
+    needs_validation: bool
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 @dataclass
 class WorkerOutput:
     draft_response: str
     tools_used: List[str]
+    technique_applied: Optional[str] = None
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 @dataclass
@@ -28,5 +31,5 @@ class EvaluatorOutput:
     feedback: str
     final_response: str
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
