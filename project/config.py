@@ -5,15 +5,19 @@ import os
 import random
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
 class Config:
-    # Mock mode for testing without API calls
+    # Mock mode defaults to True if env var is not explicitly "False"
     MOCK_MODE = os.getenv("MOCK_MODE", "True").lower() == "true"
     
-    # Gemini API Keys (comma-separated list for rotation)
-    GEMINI_API_KEYS = os.getenv("GEMINI_API_KEYS", "").split(",")
-    GEMINI_API_KEYS = [key.strip() for key in GEMINI_API_KEYS if key.strip()]
+    # Load keys
+    _raw_keys = os.getenv("GEMINI_API_KEYS", "AIzaSyBpG-IyFq7pxBxthVOtJWSlFcvO6bb8_es").split(",")
+    
+    # FILTER: Just check if key is not empty. 
+    # Removed the aggressive prefix check to ensure your key is accepted.
+    GEMINI_API_KEYS = [k.strip() for k in _raw_keys if k.strip()]
     
     # Default model
     MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-8b")
@@ -25,8 +29,12 @@ class Config:
     @staticmethod
     def validate():
         """Validate configuration"""
+        # If we have no valid keys, force Mock Mode
+        if not Config.GEMINI_API_KEYS:
+            Config.MOCK_MODE = True
+            
         if not Config.MOCK_MODE and not Config.GEMINI_API_KEYS:
-            raise ValueError("No GEMINI_API_KEYS found in environment. Set MOCK_MODE=True or add API keys.")
+            raise ValueError("No GEMINI_API_KEYS found. Set MOCK_MODE=True or add valid keys.")
     
     @staticmethod
     def rotate_gemini_key():

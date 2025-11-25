@@ -3,10 +3,11 @@ Evaluator Agent: Safety and quality assurance gatekeeper.
 """
 import re
 from typing import Dict
-from core.context_engineering import EVALUATOR_PROMPT
-from core.a2a_protocol import EvaluatorOutput
-from core.observability import logger
-from core.gemini_client import GeminiClient
+# IMPORT FIX: Absolute imports
+from project.core.context_engineering import EVALUATOR_PROMPT
+from project.core.a2a_protocol import EvaluatorOutput
+from project.core.observability import logger
+from project.core.gemini_client import GeminiClient
 
 class Evaluator:
     def __init__(self):

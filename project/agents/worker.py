@@ -2,11 +2,12 @@
 Worker Agent: Executes the plan and generates safe, supportive responses.
 """
 from typing import Dict
-from core.context_engineering import WORKER_PROMPT
-from core.a2a_protocol import WorkerOutput
-from tools.tools import Tools
-from core.observability import logger
-from core.gemini_client import GeminiClient
+# FIX: Use absolute imports
+from project.core.context_engineering import WORKER_PROMPT
+from project.core.a2a_protocol import WorkerOutput
+from project.tools.tools import Tools
+from project.core.observability import logger
+from project.core.gemini_client import GeminiClient
 
 class Worker:
     def __init__(self):
@@ -78,9 +79,9 @@ class Worker:
         ).to_dict()
     
     def _mock_work(self, planner_output: Dict) -> Dict:
-        """Mock worker for testing."""
+        """Mock worker for testing - NOW RESPECTS TECHNIQUE SUGGESTION"""
         action = planner_output.get("action")
-        instruction = planner_output.get("instruction", "")
+        technique = planner_output.get("technique_suggestion", "")
         
         if action == "emergency_protocol":
             draft = """
@@ -93,18 +94,39 @@ class Worker:
             You matter. Please reach out for professional support.
             """
         elif action == "provide_grounding":
-            draft = f"""
-            I hear that you're feeling overwhelmed. Let's try a grounding technique together.
-            
-            **Box Breathing:**
-            1. Breathe in for 4 counts
-            2. Hold for 4 counts  
-            3. Breathe out for 4 counts
-            4. Hold for 4 counts
-            
-            Repeat this 4-5 times. I'm here with you.
-            *This is not a substitute for professional care.*
-            """
+            if technique == "54321_grounding":
+                draft = """
+                I hear that you're feeling overwhelmed. Let's try the **5-4-3-2-1 Technique** to get grounded.
+                
+                1. **Look** for 5 things you can see.
+                2. **Feel** 4 things you can touch.
+                3. **Listen** for 3 things you can hear.
+                4. **Smell** 2 things around you.
+                5. **Taste** 1 thing.
+                
+                Take your time with each one. I'm here with you.
+                """
+            elif technique == "body_scan":
+                draft = """
+                Let's do a **Mindful Body Scan** to release tension.
+                
+                Sit comfortably and close your eyes if you wish.
+                Starting at your toes, notice any tension. Breathe into it.
+                Slowly move your attention up through your feet, legs, stomach...
+                Continue all the way to the top of your head.
+                Just observe without needing to change anything.
+                """
+            else:  # box_breathing or default
+                draft = """
+                Let's try **Box Breathing** to slow things down.
+                
+                1. **Inhale** for 4 counts...
+                2. **Hold** for 4 counts...
+                3. **Exhale** for 4 counts...
+                4. **Hold** empty for 4 counts...
+                
+                Repeat this cycle 4 times. You are safe.
+                """
         elif action == "provide_resources":
             draft = """
             Here are some trusted mental health resources:
@@ -122,8 +144,11 @@ class Worker:
         else:
             draft = "Thank you for sharing. I'm here to listen and support you. What you're feeling is valid."
         
+        # Add disclaimer
+        draft += "\n\n*This is not a substitute for professional care.*"
+        
         return WorkerOutput(
             draft_response=draft,
             tools_used=["mock_mode"],
-            technique_applied="mock"
+            technique_applied=technique
         ).to_dict()

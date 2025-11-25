@@ -6,10 +6,11 @@ A production-ready, safety-first AI agent system providing grounding support and
 
 - **Multi-Agent Architecture**: Planner → Worker → Evaluator pipeline
 - **Safety-First Design**: Comprehensive content filtering and evaluation
-- **Evidence-Based Techniques**: 5-4-3-2-1 grounding, box breathing, body scan
+- **Evidence-Based Techniques**: 5-4-3-2-1 grounding, box breathing, body scan, mindful observation
 - **Global Resources**: Official helplines for US, UK, India, Canada, Australia, and worldwide
 - **Key Rotation**: Automatic fallback across multiple Gemini API keys
 - **Observable**: Detailed logging for debugging and monitoring
+- **Web UI**: Gradio interface for easy interaction
 
 ## Quick Start
 

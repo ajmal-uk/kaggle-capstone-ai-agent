@@ -3,10 +3,11 @@ Planner Agent: Analyzes user input and creates a safe, actionable plan.
 """
 import json
 from typing import Dict
-from core.context_engineering import PLANNER_PROMPT
-from core.a2a_protocol import PlannerOutput
-from core.observability import logger
-from core.gemini_client import GeminiClient
+# Absolute imports
+from project.core.context_engineering import PLANNER_PROMPT
+from project.core.a2a_protocol import PlannerOutput
+from project.core.observability import logger
+from project.core.gemini_client import GeminiClient
 
 class Planner:
     def __init__(self):
@@ -21,7 +22,7 @@ class Planner:
         if hasattr(self, 'mock_mode') and self.mock_mode:
             return self._mock_plan(user_input)
         
-        # Prepare prompt with safety context
+        # Prepare prompt
         prompt = f"""
         Analyze this conversation and provide a structured plan.
         

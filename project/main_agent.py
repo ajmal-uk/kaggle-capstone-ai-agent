@@ -1,13 +1,13 @@
-# === main_agent.py (CORRECT VERSION) ===
 """
 Main Agent: Orchestrator for the multi-agent pipeline.
 """
-from agents.planner import Planner
-from agents.worker import Worker
-from agents.evaluator import Evaluator
-from memory.session_memory import SessionMemory
-from core.observability import logger
-from config import Config
+# FIX: Use absolute imports
+from project.agents.planner import Planner
+from project.agents.worker import Worker
+from project.agents.evaluator import Evaluator
+from project.memory.session_memory import SessionMemory
+from project.core.observability import logger
+from project.config import Config
 from typing import Dict
 
 class MainAgent:
@@ -82,11 +82,3 @@ class MainAgent:
         """Clear conversation history."""
         self.memory.clear()
         logger.log("MainAgent", "Conversation memory cleared")
-
-def run_agent(user_input: str, mock_mode: bool = None) -> str:
-    """
-    Convenience function to run agent and get response string.
-    """
-    agent = MainAgent(mock_mode=mock_mode)
-    result = agent.handle_message(user_input)
-    return result["response"]

@@ -6,8 +6,9 @@ import json
 from typing import Optional, Dict, Any
 import google.generativeai as genai
 from requests.exceptions import RequestException
-from core.observability import logger
-from config import Config
+# Absolute imports
+from project.core.observability import logger
+from project.config import Config
 
 class GeminiClient:
     def __init__(self, system_instruction: str):
