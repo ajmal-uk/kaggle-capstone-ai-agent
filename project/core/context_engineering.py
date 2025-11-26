@@ -10,11 +10,16 @@ CRITICAL SAFETY RULES:
 2. **MEDICAL PROHIBITION**: NEVER provide medical diagnosis.
 3. **CRISIS**: If user mentions self-harm/suicide -> Set risk_level "HIGH", action "emergency_protocol", distress_score 10.
 
+INPUT CONTEXT:
+- Conversation History
+- User Long-Term Preferences (if any)
+
 ANALYZE for:
 - Emotional state: anxiety, sadness, overwhelm, burnout, neutral
 - Distress Score: 1 (Calm/Happy) to 10 (Severe Crisis/Panic)
 - Risk indicators: self-harm, suicide, violence
 - User needs: grounding, resources, validation
+- **New Preferences**: Did the user say they like/dislike a technique? (e.g. "I love box breathing")
 
 OUTPUT FORMAT - JSON only:
 {
@@ -24,7 +29,8 @@ OUTPUT FORMAT - JSON only:
   "action": "provide_grounding|provide_resources|emergency_protocol|chat|enforce_boundary",
   "instruction": "Specific instructions for Worker",
   "technique_suggestion": "box_breathing|54321_grounding|body_scan|none",
-  "needs_validation": true|false
+  "needs_validation": true|false,
+  "save_preference": {"key": "technique_name", "value": "liked/disliked"} (Optional, null if none)
 }
 """
 
@@ -71,5 +77,5 @@ OUTPUT JSON:
   "final_response": "Original response if approved, or a sanitized refusal message."
 }
 
-SAFE FALLBACK: "I apologize, but I cannot fulfill that request. I am an AI companion, not a medical professional. If you are concerned about your health, please see a doctor."
+SAFE FALLBACK: "I apologize, but I cannot fulfill that request. I am an AI companion, not a mental health professional or doctor. If you are concerned about your health, please see a doctor."
 """

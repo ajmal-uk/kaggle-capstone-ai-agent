@@ -5,6 +5,7 @@ from project.agents.planner import Planner
 from project.agents.worker import Worker
 from project.agents.evaluator import Evaluator
 from project.memory.session_memory import SessionMemory
+from project.memory.long_term_memory import LongTermMemory # NEW IMPORT
 from project.core.observability import logger
 from project.config import Config
 from typing import Dict
@@ -16,6 +17,7 @@ class MainAgent:
         self.worker = Worker()
         self.evaluator = Evaluator()
         self.memory = SessionMemory(max_history=8)
+        self.long_term_memory = LongTermMemory() # NEW COMPONENT
         
         # Set mock mode
         self.mock_mode = mock_mode if mock_mode is not None else Config.MOCK_MODE
@@ -35,22 +37,33 @@ class MainAgent:
             self.memory.add_message("user", user_input)
             history_str = self.memory.get_history_string()
             
-            # 2. Planner (Analyze Input)
-            plan = self.planner.plan(user_input, history_str)
+            # 2. Get Long Term Context
+            lt_memory_str = self.long_term_memory.get_preferences_string()
             
-            # 3. Worker (Execute Plan)
+            # 3. Planner (Analyze Input + History + Long Term Memory)
+            plan = self.planner.plan(user_input, history_str, lt_memory_str)
+            
+            # 3a. Save Preferences if detected (New Feature)
+            save_pref = plan.get("save_preference")
+            if save_pref and isinstance(save_pref, dict):
+                key = save_pref.get("key")
+                value = save_pref.get("value")
+                if key and value:
+                    self.long_term_memory.update_preference(key, value)
+                    logger.log("MainAgent", f"Saved User Preference: {key}={value}")
+            
+            # 4. Worker (Execute Plan)
             worker_res = self.worker.work(plan)
             
-            # 4. Evaluator (Check Output vs Input)
-            # CHANGE: Now passing user_input to evaluate()
+            # 5. Evaluator (Check Output vs Input)
             eval_res = self.evaluator.evaluate(worker_res, user_input)
             
             final_response = eval_res.get("final_response")
             
-            # 5. Update Memory
+            # 6. Update Memory
             self.memory.add_message("assistant", final_response)
             
-            # 6. Compile results
+            # 7. Compile results
             return {
                 "response": final_response,
                 "plan": plan,

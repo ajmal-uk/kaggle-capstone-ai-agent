@@ -13,6 +13,8 @@ class PlannerOutput:
     instruction: str
     technique_suggestion: str
     needs_validation: bool
+    # NEW: Field to capture preferences for long-term memory
+    save_preference: Optional[Dict[str, str]] = None 
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
