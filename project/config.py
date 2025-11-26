@@ -24,7 +24,7 @@ class Config:
     MOCK_MODE: bool = os.getenv("MOCK_MODE", "False").lower() in ("1", "true", "yes")
 
     # Model name (kept configurable)
-    MODEL_NAME: str = os.getenv("MODEL_NAME", "gemini-2.0-flash")
+    MODEL_NAME: str = os.getenv("MODEL_NAME", "")
 
     # Generation configuration
     TEMPERATURE: float = float(os.getenv("TEMPERATURE", "0.1"))
